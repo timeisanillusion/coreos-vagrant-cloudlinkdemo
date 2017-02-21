@@ -18,7 +18,7 @@ wget http://10.0.0.1/cloudlink/securevm &
 #Wait 5 seconds
 sleep 5
 #check if the file exists, install and encrypt
-if test -f securevm; then sh securevm -S 10.0.0.1 && svm encrypt /mnt/datadrive;fi
+if test -f securevm; then echo "SecureVM Downloaded.  Starting install...." && sh securevm -S 10.0.0.1 && echo "Encrypting datadrive" && svm encrypt /mnt/datadrive;fi
 SCRIPT
 
 # Defaults for config options defined in CONFIG
