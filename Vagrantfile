@@ -80,16 +80,8 @@ Vagrant.configure("2") do |config|
       config.vm.hostname = vm_name
 	  
 
-	  # CLOUDLINK: Enable persistent_storage using plugin from https://github.com/kusnier/vagrant-persistent-storage
-	  config.persistent_storage.enabled = true
-	  config.persistent_storage.location = "C:/Disks/" + vm_name + ".vdi"
-	  config.persistent_storage.size = 2000
-	  config.persistent_storage.mountname = 'datadisk'
-	  config.persistent_storage.filesystem = 'ext4'
-	  config.persistent_storage.mountpoint = '/mnt/datadisk'
-	  config.persistent_storage.volgroupname = 'myvolgroup'
-			  
-	  
+	  # CLOUDLINK: Create the data disk for each VM
+	  disk_name = "C:/Disks/" + vm_name + ".vdi"
 	  
 	  
       if $enable_serial_logging
@@ -135,6 +127,14 @@ Vagrant.configure("2") do |config|
         vb.memory = vm_memory
         vb.cpus = vm_cpus
         vb.customize ["modifyvm", :id, "--cpuexecutioncap", "#{$vb_cpuexecutioncap}"]
+		
+		
+		# CLOUDLINK: If the disk doesn't exist, create it and add it to the VM
+		unless File.exist?(disk_name)
+			vb.customize ['createhd', '--filename', disk_name, '--size', 2 * 1024]
+		end
+		vb.customize ['storageattach', :id, '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', disk_name]
+		
       end
 
       ip = "172.17.8.#{i+100}"
@@ -156,7 +156,7 @@ Vagrant.configure("2") do |config|
       end
 
 	  
-	  # CLOUDLINK Install
+	  # CLOUDLINK: Run the encryption script
 	  config.vm.provision "shell", path: "cloudlinkscript.sh"
 	  
     end
