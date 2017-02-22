@@ -8,19 +8,6 @@ Vagrant.require_version ">= 1.6.0"
 CLOUD_CONFIG_PATH = File.join(File.dirname(__FILE__), "user-data")
 CONFIG = File.join(File.dirname(__FILE__), "config.rb")
 
-
-# CLOUDLINK Script
-$script = <<SCRIPT
-touch ~/cloudlinklog.txt
-echo "Downloading SecureVM" >> ~/cloudlinklog.txt
-#run wget in the background (VERY small file)
-wget http://10.0.0.1/cloudlink/securevm &
-#Wait 5 seconds
-sleep 5
-#check if the file exists, install and encrypt
-if test -f securevm; then echo "SecureVM Downloaded.  Starting install...." && sh securevm -S 10.0.0.1 && echo "Encrypting datadrive" && svm encrypt /mnt/datadrive;fi
-SCRIPT
-
 # Defaults for config options defined in CONFIG
 $num_instances = 1
 $instance_name_prefix = "core"
@@ -96,8 +83,8 @@ Vagrant.configure("2") do |config|
 	  # CLOUDLINK: Enable persistent_storage using plugin from https://github.com/kusnier/vagrant-persistent-storage
 	  config.persistent_storage.enabled = true
 	  config.persistent_storage.location = "C:/Disks/" + vm_name + ".vdi"
-	  config.persistent_storage.size = 5000
-	  config.persistent_storage.mountname = 'data'
+	  config.persistent_storage.size = 2000
+	  config.persistent_storage.mountname = 'datadisk'
 	  config.persistent_storage.filesystem = 'ext4'
 	  config.persistent_storage.mountpoint = '/mnt/datadisk'
 	  config.persistent_storage.volgroupname = 'myvolgroup'
@@ -170,7 +157,7 @@ Vagrant.configure("2") do |config|
 
 	  
 	  # CLOUDLINK Install
-	  config.vm.provision "shell", inline: $script
+	  config.vm.provision "shell", path: "cloudlinkscript.sh"
 	  
     end
   end
