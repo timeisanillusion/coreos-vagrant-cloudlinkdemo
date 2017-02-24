@@ -5,6 +5,10 @@ require 'fileutils'
 
 Vagrant.require_version ">= 1.6.0"
 
+#Used  for saving the disks on destroy
+# see https://gist.github.com/darrenleeweber/
+require_relative 'data_disk'
+
 CLOUD_CONFIG_PATH = File.join(File.dirname(__FILE__), "user-data")
 CONFIG = File.join(File.dirname(__FILE__), "config.rb")
 
@@ -45,12 +49,19 @@ def vm_cpus
   $vb_cpus.nil? ? $vm_cpus : $vb_cpus
 end
 
+
+
+
+
 Vagrant.configure("2") do |config|
   # always use Vagrants insecure key
   config.ssh.insert_key = false
   # forward ssh agent to easily ssh into the different machines
   config.ssh.forward_agent = true
 
+
+  
+  
   config.vm.box = "coreos-%s" % $update_channel
   if $image_version != "current"
       config.vm.box_version = $image_version
@@ -62,6 +73,13 @@ Vagrant.configure("2") do |config|
       override.vm.box_url = "https://storage.googleapis.com/%s.release.core-os.net/amd64-usr/%s/coreos_production_vagrant_vmware_fusion.json" % [$update_channel, $image_version]
     end
   end
+  
+  
+  # CLOUDLINK, Restore any data disks
+  #cmd = ['copy /Y c:\Disks\Backup\* c:\Disks'].join(' ')
+		
+  #system(cmd)
+
 
   config.vm.provider :virtualbox do |v|
     # On VirtualBox, we don't have guest additions or a functional vboxsf
@@ -77,11 +95,15 @@ Vagrant.configure("2") do |config|
 
   (1..$num_instances).each do |i|
     config.vm.define vm_name = "%s-%02d" % [$instance_name_prefix, i] do |config|
+
       config.vm.hostname = vm_name
 	  
 
+
 	  # CLOUDLINK: Create the data disk for each VM
-	  disk_name = "C:/Disks/" + vm_name + ".vdi"
+	  disk_folder = "c:/Disks/"
+	  disk_name = disk_folder + vm_name + ".vdi"
+	  $f = "%s-%02d" % [$instance_name_prefix, i]
 	  
 	  
       if $enable_serial_logging
@@ -127,7 +149,7 @@ Vagrant.configure("2") do |config|
         vb.memory = vm_memory
         vb.cpus = vm_cpus
         vb.customize ["modifyvm", :id, "--cpuexecutioncap", "#{$vb_cpuexecutioncap}"]
-		
+		vb.name = vm_name
 		
 		# CLOUDLINK: If the disk doesn't exist, create it and add it to the VM
 		unless File.exist?(disk_name)
@@ -158,6 +180,26 @@ Vagrant.configure("2") do |config|
 	  
 	  # CLOUDLINK: Run the encryption script
 	  config.vm.provision "shell", path: "cloudlinkscript.sh"
+	  
+	  
+	  
+	  # CLOUDLINK
+	  # Triggers, depends on:
+      # vagrant plugin install vagrant-triggers
+	  # Used to backup the files before the VM is destroyed
+      config.trigger.before :destroy do
+		info "Backing up the disks before destroying VM(s)"
+		
+		#cmd = ['copy /Y c:\Disks\* c:\Disks\Backup'].join(' ')
+		
+		#system(cmd)
+
+		data_disk_detach
+		
+		
+
+      end
+	  
 	  
     end
   end
