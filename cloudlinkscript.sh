@@ -70,6 +70,6 @@ fi
 #	sudo ln -s /mnt/datadisk /var/lib/docker
 #fi
 
-
+echo "Running Docker Test"
 docker run hello-world
 
