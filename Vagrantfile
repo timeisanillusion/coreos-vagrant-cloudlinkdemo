@@ -9,6 +9,10 @@ Vagrant.require_version ">= 1.6.0"
 # see https://gist.github.com/darrenleeweber/
 require_relative 'data_disk'
 
+
+#CLOUDLINK Shared Info
+require_relative 'diskvars'
+
 CLOUD_CONFIG_PATH = File.join(File.dirname(__FILE__), "user-data")
 CONFIG = File.join(File.dirname(__FILE__), "config.rb")
 
@@ -104,7 +108,10 @@ Vagrant.configure("2") do |config|
 	  disk_folder = "c:/Disks/"
 	  disk_name = disk_folder + vm_name + ".vdi"
 	  $f = "%s-%02d" % [$instance_name_prefix, i]
-	  
+
+
+	  $vmlist=[]
+	  $vmlist.push($f)
 	  
       if $enable_serial_logging
         logdir = File.join(File.dirname(__FILE__), "log")
@@ -157,6 +164,8 @@ Vagrant.configure("2") do |config|
 		end
 		vb.customize ['storageattach', :id, '--storagectl', 'IDE Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', disk_name]
 		
+		
+		
       end
 
       ip = "172.17.8.#{i+100}"
@@ -193,6 +202,10 @@ Vagrant.configure("2") do |config|
 		#cmd = ['copy /Y c:\Disks\* c:\Disks\Backup'].join(' ')
 		
 		#system(cmd)
+		
+		SharedVaribles.vmcurrentname = config.vm.hostname
+	
+		info "***WARNING VM(s) will be powered down and disk removed now even if the VM is not destroyed***"
 
 		data_disk_detach
 		

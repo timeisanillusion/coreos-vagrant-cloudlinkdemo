@@ -1,17 +1,13 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
+#CLOUDLINK Modified file from https://gist.githubusercontent.com/darrenleeweber to deal with multiple VMs
+#Shared Info
 
-#VM_NAME ||= ENV['$f'] || "core-03"
-$name = [$f].join(' ')
-#name2 = [$f + " Set at top"].join(' ')
+require_relative 'diskvars'
 
+vm_name =  ""
 
-#HOME = ENV['HOME']
-#DATA_DISK_PATH = "#{HOME}/VirtualDisks"
-#FileUtils.mkdir_p DATA_DISK_PATH
-#DATA_DISK_FILE = "#{DATA_DISK_PATH}/data_disk.vmdk"
-#DATA_DISK_FORMAT = 'VMDK'
-#DATA_DISK_SIZE = 500 * 1024
+HOME = ENV['HOME']
 
 
 def vbox_manage?
@@ -33,15 +29,15 @@ def vm_boxes
 end
 
 def vm_exists?
-  vm_boxes[$name] ? true : false
+  vm_boxes[SharedVaribles.vmcurrentname] ? true : false
 end
 
 def vm_info
-  vm_exists? ? `VBoxManage showvminfo #{$name}` : ''
+  vm_exists? ? `VBoxManage showvminfo #{SharedVaribles.vmcurrentname}` : ''
 end
 
 def vm_uuid
-  vm_boxes[$name]
+  vm_boxes[SharedVaribles.vmcurrentname]
 end
 
 def vm_state
@@ -58,16 +54,11 @@ def vm_running?
   vm_state == "running"
 end
 
-
-
 def vm_stop
-  #$name = [$f].join(' ')
   case vm_exists?
   when true
-    cmd = "VBoxManage controlvm #{$name} poweroff"
+    cmd = "VBoxManage controlvm #{SharedVaribles.vmcurrentname} poweroff"
     vm_running? ? system(cmd) : true
-	info "stopping VM"
-	info cmd
   when false
     # it is 'stopped' if it doesn't exist, but
     # this return value is the status of this operation.
@@ -93,24 +84,12 @@ def data_disk_uuid
   end
 end
 
-# Is the data disk attached to the vm?
-def data_disk_attached?
-  vm_info =~ /#{DATA_DISK_FILE}/ ? true : false
-end
-
 
 # Try to detach data disk
 def data_disk_detach
-  $name = [$f].join(' ')
-  #info "Detaching the disk"
-  #test = [$f + "  This is the variable name from vargrant **********"].join(' ')
-  #info test
+  vm_name =  SharedVaribles.vmcurrentname
+  puts "Selected VM #{vm_name} and removing data disks.  Please run \'vagrant up --provision\' to reattach and/or power on the VM(s)"
   vm_stop
-  
-  #cmd = "VBoxManage controlvm #{$name} poweroff"
-  #info cmd
-  #system(cmd)
-  
   if vm_exists? 
     cmd = [
       'VBoxManage storageattach ' + vm_uuid,
@@ -120,33 +99,9 @@ def data_disk_detach
       '--type hdd',
       '--medium none'
     ].join(' ')
-    #if system(cmd) && ! data_disk_attached?
-    #if system(cmd)
-		#info cmd
-	  system(cmd)
-	  info "Running Command"
-	  puts 'Detached virtual data disk:'
-    #end
-  end
-  #! data_disk_attached?
-end
-
-
-# Try to identify the data disk UUID
-def data_disk_create
-  if ! data_disk_created? && vbox_manage?
-    cmd = [
-      'VBoxManage createhd',
-      '--filename ' + DATA_DISK_FILE,
-      '--format ' + DATA_DISK_FORMAT,
-      '--size ' + DATA_DISK_SIZE.to_s
-    ].join(' ')
-    if system(cmd) && data_disk_created?
-      puts 'Created virtual data disk:'
-      puts "File: #{DATA_DISK_FILE}"
-      puts "UUID: #{data_disk_uuid}"
-      puts "SIZE: #{DATA_DISK_SIZE}"
+    if system(cmd)
+      puts 'Detached virtual data disk:'
     end
   end
-  data_disk_created?
+
 end

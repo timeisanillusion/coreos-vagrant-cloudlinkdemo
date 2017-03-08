@@ -28,7 +28,7 @@ else
 	echo "Running fdisk and formatting the partition"
 	(
 	echo o 
-	echo n ls -l /dev/ | grep sdb1
+	echo n
 	echo p 
 	echo 1 
 	echo   
